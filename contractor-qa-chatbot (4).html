@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ContractorAI – Your On-Site Assistant</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; min-height: 100vh; display: flex; flex-direction: column; }
+
+  header { background: #1a1a1a; color: #fff; padding: 14px 24px; display: flex; align-items: center; gap: 12px; }
+  .logo { width: 32px; height: 32px; background: #f5a623; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .logo svg { width: 18px; height: 18px; fill: none; stroke: #1a1a1a; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  header h1 { font-size: 17px; font-weight: 600; letter-spacing: -0.2px; }
+  header span { font-size: 12px; color: #888; margin-left: 4px; }
+
+  .chat-wrapper { flex: 1; max-width: 780px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; padding: 0 16px 16px; }
+
+  .topic-bar { display: flex; gap: 8px; padding: 14px 0 10px; flex-wrap: wrap; }
+  .topic-btn { background: #fff; border: 1px solid #ddd; border-radius: 20px; padding: 6px 14px; font-size: 12px; color: #444; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .topic-btn:hover, .topic-btn.active { background: #f5a623; border-color: #f5a623; color: #1a1a1a; font-weight: 500; }
+
+  .chat-box { flex: 1; background: #fff; border: 1px solid #e0deda; border-radius: 14px; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; min-height: 420px; max-height: 520px; }
+
+  .msg { display: flex; gap: 10px; align-items: flex-start; }
+  .msg.user { flex-direction: row-reverse; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; }
+  .avatar.bot { background: #f5a623; color: #1a1a1a; }
+  .avatar.user { background: #1a1a1a; color: #fff; }
+  .bubble { max-width: 82%; padding: 11px 15px; border-radius: 14px; font-size: 14px; line-height: 1.7; }
+  .msg.bot .bubble { background: #f7f6f2; color: #222; border-bottom-left-radius: 4px; }
+  .msg.user .bubble { background: #1a1a1a; color: #fff; border-bottom-right-radius: 4px; }
+  .bubble .point { display: block; padding: 2px 0 2px 4px; border-left: 2px solid #f5a623; margin: 4px 0; }
+
+  .typing { display: flex; align-items: center; gap: 5px; padding: 10px 15px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #aaa; animation: bounce 1.2s infinite; }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
+
+  .input-row { display: flex; gap: 10px; margin-top: 12px; }
+  .input-row input { flex: 1; padding: 12px 16px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 14px; outline: none; transition: border 0.15s; background: #fff; }
+  .input-row input:focus { border-color: #f5a623; }
+  .input-row button { background: #1a1a1a; color: #fff; border: none; border-radius: 10px; padding: 12px 20px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.15s; }
+  .input-row button:hover { background: #333; }
+
+  .suggested { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .sug-btn { background: #fff; border: 1px solid #e0deda; border-radius: 8px; padding: 5px 11px; font-size: 12px; color: #555; cursor: pointer; transition: all 0.15s; }
+  .sug-btn:hover { border-color: #f5a623; color: #1a1a1a; }
+  .disclaimer { font-size: 11px; color: #aaa; text-align: center; padding: 8px 0 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+  </div>
+  <div><h1>ContractorAI <span>by Scelta</span></h1></div>
+</header>
+
+<div class="chat-wrapper">
+  <div class="topic-bar">
+    <button class="topic-btn" onclick="askTopic('permits')">Permits & Approvals</button>
+    <button class="topic-btn" onclick="askTopic('materials')">Materials & Costs</button>
+    <button class="topic-btn" onclick="askTopic('timelines')">Project Timelines</button>
+    <button class="topic-btn" onclick="askTopic('subcontractors')">Subcontractors</button>
+    <button class="topic-btn" onclick="askTopic('codes')">Building Codes</button>
+    <button class="topic-btn" onclick="askTopic('safety')">Safety & Compliance</button>
+  </div>
+
+  <div class="chat-box" id="chatBox">
+    <div class="msg bot">
+      <div class="avatar bot">AI</div>
+      <div>
+        <div class="bubble">Hey! I'm your AI construction assistant. Ask me anything about permits, materials, timelines, building codes, or managing your job site. What's on your mind?</div>
+        <div class="suggested">
+          <button class="sug-btn" onclick="sendMsg('How long does a building permit take in Ontario?')">How long does a permit take?</button>
+          <button class="sug-btn" onclick="sendMsg('What materials do I need for a residential deck?')">Materials for a deck?</button>
+          <button class="sug-btn" onclick="sendMsg('How do I find reliable subcontractors?')">Finding subcontractors?</button>
+          <button class="sug-btn" onclick="sendMsg('What are common building code violations to avoid?')">Common code violations?</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-row">
+    <input type="text" id="userInput" placeholder="Ask anything about your project..." onkeydown="if(event.key==='Enter') sendMsg()" />
+    <button onclick="sendMsg()">Send</button>
+  </div>
+  <p class="disclaimer">ContractorAI · For general guidance only · Always verify with local authorities and licensed professionals</p>
+</div>
+
+<script>
+const KB = {
+  permits: {
+    keywords: ['permit','approval','application','zoning','variance','inspection','city','municipality','submit','submitted','license','licen'],
+    title: 'Permits & Approvals',
+    answer: [
+      'Building permits in Ontario typically take <strong>2–8 weeks</strong> for residential projects. Complex commercial projects can take 3–6 months.',
+      'Here\'s what you need to know:',
+      '• <strong>When you need a permit:</strong> New builds, additions, structural changes, electrical, plumbing, HVAC, decks over 24" high, finished basements',
+      '• <strong>When you don\'t:</strong> Cosmetic renos (painting, flooring), replacing fixtures like-for-like, small sheds under 10m²',
+      '• <strong>What to submit:</strong> Site plan, floor plans, elevations, structural drawings, energy compliance forms',
+      '• <strong>Pro tips to speed things up:</strong> Submit complete drawings the first time, respond to any deficiency notices within 24hrs, use a permit expediter for large jobs',
+      '• <strong>Fees:</strong> Usually $10–$20 per $1,000 of construction value in Ontario',
+      'Always check with your local municipality — rules vary by city. Toronto, Mississauga, and Brampton each have different processes.'
+    ],
+    followups: ['What triggers a permit inspection?', 'How do I appeal a permit rejection?', 'What happens if I build without a permit?']
+  },
+  materials: {
+    keywords: ['material','lumber','concrete','steel','cost','price','supply','wood','drywall','insulation','shingle','roofing','framing','foundation','gravel','aggregate','price','budget','quote','estimate'],
+    title: 'Materials & Costs',
+    answer: [
+      'Here\'s a practical cost guide for common materials in Ontario (prices vary by region and fluctuate — always get current supplier quotes):',
+      '• <strong>Lumber (2x4x8):</strong> $5–$8 per stick · <strong>Plywood (4x8 sheet):</strong> $40–$70',
+      '• <strong>Concrete (ready-mix):</strong> $180–$220 per cubic metre delivered',
+      '• <strong>Drywall (4x8 sheet):</strong> $15–$22 · <strong>Insulation (R20 batt):</strong> $1.20–$1.80/sq ft',
+      '• <strong>Asphalt shingles:</strong> $80–$130 per square (100 sq ft)',
+      '• <strong>Rebar (#15):</strong> $1.00–$1.40 per linear foot',
+      '<strong>Tips to control material costs:</strong>',
+      '• Get 3 quotes minimum from suppliers',
+      '• Buy in bulk when possible — negotiate volume discounts',
+      '• Check RenoDepot, Home Depot, and local lumber yards — prices differ significantly',
+      '• Watch for material lead times — windows, doors, and engineered lumber can take 4–10 weeks',
+      '• Add 10–15% waste factor to all quantities in your estimates'
+    ],
+    followups: ['How do I calculate material quantities for a deck?', 'What\'s the best way to reduce material waste?', 'How do I handle material price increases mid-project?']
+  },
+  timelines: {
+    keywords: ['timeline','schedule','duration','how long','weeks','days','months','deadline','delay','phase','milestone','gantt','plan','sequence','order','start','finish','complete'],
+    title: 'Project Timelines',
+    answer: [
+      'Here are typical durations for common residential projects in Ontario:',
+      '• <strong>Kitchen reno:</strong> 3–6 weeks · <strong>Bathroom reno:</strong> 1–3 weeks',
+      '• <strong>Basement finish:</strong> 4–8 weeks · <strong>Deck build:</strong> 1–2 weeks',
+      '• <strong>Home addition:</strong> 3–6 months · <strong>New build:</strong> 8–14 months',
+      '• <strong>Roof replacement:</strong> 1–3 days · <strong>HVAC replacement:</strong> 1–3 days',
+      '<strong>How to build a solid timeline:</strong>',
+      '• Work backwards from your client\'s deadline',
+      '• Add 20% buffer for every phase — delays are guaranteed',
+      '• Schedule inspections 1–2 weeks ahead — inspectors are often booked out',
+      '• Order long-lead items (windows, doors, cabinets) before breaking ground',
+      '• Don\'t schedule trades back-to-back — give 1–2 day buffers between them',
+      '<strong>Biggest causes of delays:</strong> permit delays, material shortages, weather, change orders, inspection failures. Address these proactively at the start of every project.'
+    ],
+    followups: ['How do I handle a client pushing for a faster timeline?', 'What\'s a realistic timeline for a basement renovation?', 'How do I sequence trades properly?']
+  },
+  subcontractors: {
+    keywords: ['sub','subcontractor','trade','electrician','plumber','hvac','drywaller','painter','hire','find','manage','contract','invoice','payment','scope','dispute'],
+    title: 'Subcontractors',
+    answer: [
+      'Managing subs well is one of the biggest factors in a successful project. Here\'s what works:',
+      '<strong>Finding reliable subs:</strong>',
+      '• Ask other GCs for referrals — the best trades are always busy but worth the wait',
+      '• Use local trade associations (OGCA, ECAO, MCAC) to find licensed contractors',
+      '• Check Google reviews, BBB, and HomeStars',
+      '• Always verify their license and WSIB clearance certificate before hiring',
+      '<strong>Managing subs on site:</strong>',
+      '• Give a clear written scope of work before they start — no verbal agreements',
+      '• Set explicit start dates, milestones, and completion dates in the contract',
+      '• Hold 10% holdback until 45 days after substantial completion (Ontario Construction Act)',
+      '• Do a site walkthrough together before they leave — document deficiencies in writing',
+      '<strong>Payment best practices:</strong>',
+      '• Use progress billing tied to milestones, not time',
+      '• Never pay 100% upfront — standard is 10% mobilization, rest on completion',
+      '• Keep a paper trail of all change orders — they must be signed before work starts'
+    ],
+    followups: ['What should a subcontractor agreement include?', 'How do I handle a sub who does poor quality work?', 'What is the Ontario Construction Act holdback rule?']
+  },
+  codes: {
+    keywords: ['code','ontario building code','obc','nbc','national building code','regulation','requirement','complian','setback','egress','fire','structural','load','header','beam','span','stair','railing','ceiling height','r-value','energy'],
+    title: 'Building Codes',
+    answer: [
+      'Key Ontario Building Code (OBC) requirements every contractor should know:',
+      '<strong>Structural:</strong>',
+      '• Minimum ceiling height: 1.95m (6\'5") in habitable rooms, 1.85m in hallways',
+      '• Stair rise: max 200mm · Run: min 210mm · Width: min 860mm',
+      '• Handrails required on stairs with 3+ risers · Guardrails required >600mm above grade',
+      '<strong>Egress & Fire:</strong>',
+      '• Every bedroom needs an egress window: min 0.35m² opening, 380mm min dimension',
+      '• Smoke alarms required on every floor and in every bedroom',
+      '• CO detectors required near sleeping areas in homes with attached garages or fuel appliances',
+      '<strong>Energy (SB-12):</strong>',
+      '• Walls: min R-22 effective · Attic: min R-60 · Basement walls: min R-17',
+      '• Windows must meet minimum U-value requirements',
+      '<strong>Setbacks (check locally — varies by municipality):</strong>',
+      '• Typically 1.2m–1.8m from side lot lines for residential',
+      '• Front setback usually matches existing neighbourhood average',
+      'Always use the current OBC (2012 with 2024 amendments) and confirm locally — municipalities can have additional requirements.'
+    ],
+    followups: ['What are the egress window requirements in Ontario?', 'What insulation R-values are required in Ontario?', 'How do setbacks work for a home addition?']
+  },
+  safety: {
+    keywords: ['safety','ohsa','wsib','ppe','hazard','fall','scaffold','ladder','protection','hard hat','vest','gloves','silica','asbestos','mold','whmis','first aid','toolbox','talk','incident','accident','injury'],
+    title: 'Safety & Compliance',
+    answer: [
+      'Ontario job site safety is governed by the <strong>Occupational Health and Safety Act (OHSA)</strong> and enforced by the Ministry of Labour.',
+      '<strong>Mandatory PPE on most sites:</strong>',
+      '• Hard hat (Class E for electrical work) · Safety boots (CSA Grade 1)',
+      '• High-visibility vest · Safety glasses · Gloves appropriate to task',
+      '<strong>Fall protection (required when working >3m above lower level):</strong>',
+      '• Full body harness with shock-absorbing lanyard',
+      '• Guardrails: min 1.07m high with mid-rail and toe board',
+      '• All workers must be trained before using fall protection equipment',
+      '<strong>Your legal obligations as a contractor:</strong>',
+      '• Post OHSA and your health & safety policy on site',
+      '• Conduct toolbox talks regularly — document them',
+      '• Have a first aid kit and at least one trained first aider on site',
+      '• Register with WSIB and keep clearance certificates for all subs',
+      '• Report critical injuries to Ministry of Labour within 24 hours',
+      '<strong>Common violations that get contractors fined:</strong>',
+      '• No fall protection on roofs · Unsecured ladders · No WHMIS training · Missing WSIB coverage',
+      'Fines under OHSA can reach $500,000 for corporations. It\'s not worth the risk.'
+    ],
+    followups: ['What are the ladder safety rules in Ontario?', 'How do I handle asbestos found during a renovation?', 'What WSIB coverage do I need as a GC?']
+  },
+  deck: {
+    keywords: ['deck','decking','patio','outdoor','composite','pressure treated','ledger','joist','post','footing','railing','guard'],
+    title: 'Deck Construction',
+    answer: [
+      'Here\'s a practical guide for building a residential deck in Ontario:',
+      '<strong>Permits:</strong> Required if deck is >24" (600mm) above grade. Submit site plan + structural drawings.',
+      '<strong>Materials for a typical 12x16 ft pressure-treated deck:</strong>',
+      '• <strong>Posts:</strong> 6x6 PT posts on concrete footings (below frost line — 1.2m min in Ontario)',
+      '• <strong>Beams:</strong> doubled 2x10 or engineered lumber · <strong>Joists:</strong> 2x8 at 16" o/c',
+      '• <strong>Decking:</strong> 5/4x6 PT or composite · <strong>Hardware:</strong> joist hangers, structural screws, post bases',
+      '<strong>Cost estimate (materials only, Ontario 2024):</strong>',
+      '• PT lumber deck: $35–$55/sq ft installed · Composite deck: $55–$90/sq ft installed',
+      '<strong>OBC requirements:</strong>',
+      '• Guardrail required if deck >600mm above grade — min 1.07m high',
+      '• Balusters max 100mm apart (no sphere larger than 100mm can pass through)',
+      '• Footings must be below frost depth'
+    ],
+    followups: ['What size footings do I need for a deck?', 'What\'s the difference between PT and composite decking?', 'Do I need a permit for a ground-level deck?']
+  },
+  basement: {
+    keywords: ['basement','underpinning','waterproof','egress','sump','foundation','below grade','finish','rec room','apartment','suite','secondary'],
+    title: 'Basement Renovations',
+    answer: [
+      'Basement renovations are one of the most common — and most regulated — projects in Ontario.',
+      '<strong>Always required:</strong>',
+      '• Building permit for any finished basement',
+      '• Egress window in every bedroom (min 0.35m² clear opening)',
+      '• Smoke and CO detectors',
+      '• Proper ceiling height: min 1.95m in living areas',
+      '<strong>Waterproofing — do this first:</strong>',
+      '• Fix any water infiltration before framing — mold behind walls is a nightmare',
+      '• Options: interior drainage (weeping tile + sump pump), exterior waterproofing, or crack injection',
+      '• Interior is cheaper ($5,000–$15,000) · Exterior is more thorough ($15,000–$40,000)',
+      '<strong>Insulation requirements (SB-12):</strong>',
+      '• Basement walls: min R-17 effective (spray foam or rigid + batt combination works well)',
+      '<strong>Typical timeline:</strong> 4–8 weeks for a standard finish',
+      '<strong>Cost:</strong> $40–$80/sq ft for a standard finish in Ontario (higher for secondary suites with kitchens/bathrooms)'
+    ],
+    followups: ['How do I waterproof a basement from the inside?', 'What\'s required to add a legal basement apartment?', 'How do I insulate a basement properly?']
+  },
+  changeorder: {
+    keywords: ['change order','change','scope','extra','additional work','client ask','client want','out of scope','variation','amendment'],
+    title: 'Managing Change Orders',
+    answer: [
+      'Change orders are one of the biggest sources of contractor-client conflict. Here\'s how to handle them professionally:',
+      '<strong>The golden rule:</strong> Nothing happens without a signed change order. No exceptions.',
+      '<strong>What a change order must include:</strong>',
+      '• Clear description of the additional/changed work',
+      '• Updated price (labour + materials + markup)',
+      '• Impact on project timeline',
+      '• Client signature and date before work begins',
+      '<strong>How to present change orders without losing clients:</strong>',
+      '• Frame it as protecting them: "I want to make sure you\'re aware of this cost before we proceed"',
+      '• Show a breakdown — clients accept costs more easily when they see the details',
+      '• Give options when possible (e.g., standard vs premium material)',
+      '<strong>Common mistakes:</strong>',
+      '• Doing the work and billing later — clients forget or dispute the amount',
+      '• Not documenting verbal approvals — always follow up with an email summary',
+      '• Undercharging on changes to "keep the client happy" — this erodes your margin'
+    ],
+    followups: ['How much markup should I add on change orders?', 'How do I handle a client who refuses to sign a change order?', 'What should my contract say about changes?']
+  },
+  invoice: {
+    keywords: ['invoice','billing','payment','collect','overdue','client pay','progress billing','deposit','holdback','lien','charge','fee','markup'],
+    title: 'Billing & Payments',
+    answer: [
+      'Getting paid on time is critical. Here\'s how to structure it properly in Ontario:',
+      '<strong>Recommended payment structure:</strong>',
+      '• 10–20% deposit on signing · Progress payments tied to milestones · 10% holdback until 45 days after substantial completion',
+      '<strong>Ontario Construction Act (formerly Lien Act):</strong>',
+      '• Owners must hold back 10% of each payment as statutory holdback',
+      '• Contractors have 60 days from last work to register a lien',
+      '• Prompt Payment rules: owners must pay within 28 days of receiving a proper invoice',
+      '<strong>Invoice best practices:</strong>',
+      '• Issue invoices on a fixed schedule (weekly or per milestone) — not at the end',
+      '• Include: project address, contract reference, work completed, materials, HST number',
+      '• Use software like Jobber, BuilderTrend, or QuickBooks for professional invoices',
+      '<strong>Handling late payments:</strong>',
+      '• Send a friendly reminder at 7 days overdue',
+      '• Formal notice at 14 days — reference your contract terms',
+      '• Consider stopping work after 30 days (check your contract — you may have the right to)',
+      '• Register a construction lien before the 60-day deadline if needed'
+    ],
+    followups: ['How do I register a construction lien in Ontario?', 'What does the Prompt Payment Act require?', 'How do I write a professional contractor invoice?']
+  }
+};
+
+const FALLBACKS = [
+  "That's a great question! For specific guidance on that, I'd recommend consulting with your local municipality or a licensed contractor in your area. Is there something more specific I can help with — like permits, materials, timelines, or safety?",
+  "I want to make sure I give you accurate info on that. Could you rephrase or give me a bit more context? I'm best at helping with permits, building codes, material costs, project timelines, subcontractor management, and job site safety.",
+  "Good question — that one depends a lot on your specific location and project type. What province or city are you working in? And is this for a residential or commercial project? That'll help me point you in the right direction.",
+  "For that specific question, I'd suggest checking with the Ontario Building Code or your local building department. Meanwhile, is there anything I can help with around permits, materials, timelines, or safety compliance?"
+];
+
+let fallbackIndex = 0;
+let lastTopic = null;
+
+function getResponse(input) {
+  const text = input.toLowerCase();
+
+  // Greeting
+  if (/^(hi|hello|hey|sup|yo|good morning|good afternoon)/.test(text)) {
+    return { answer: ["Hey! Good to have you here. I'm ContractorAI — your on-site construction assistant. What can I help you with today? You can ask me about permits, materials, timelines, building codes, subcontractors, or job site safety."], followups: ['How long does a permit take in Ontario?', 'What are current lumber costs?', 'What safety gear is required on site?'] };
+  }
+
+  // Thanks
+  if (/thank|thanks|thx|appreciate/.test(text)) {
+    return { answer: ["Happy to help! Feel free to ask anything else — permits, materials, codes, timelines, I've got you covered."], followups: [] };
+  }
+
+  // Search KB
+  let bestMatch = null;
+  let bestScore = 0;
+
+  for (const [key, topic] of Object.entries(KB)) {
+    let score = 0;
+    for (const kw of topic.keywords) {
+      if (text.includes(kw)) score += kw.length > 4 ? 2 : 1;
+    }
+    if (score > bestScore) { bestScore = score; bestMatch = topic; }
+  }
+
+  if (bestScore > 0) {
+    lastTopic = bestMatch;
+    return { answer: bestMatch.answer, followups: bestMatch.followups };
+  }
+
+  // Fallback
+  const fb = FALLBACKS[fallbackIndex % FALLBACKS.length];
+  fallbackIndex++;
+  return { answer: [fb], followups: ['How do permits work in Ontario?', 'What materials do I need for a deck?', 'What are safety requirements on a job site?'] };
+}
+
+function formatAnswer(lines) {
+  return lines.map(line => {
+    if (line.startsWith('•')) {
+      return `<span class="point">${line.replace(/^• /, '')}</span>`;
+    }
+    return `<p style="margin: 4px 0">${line}</p>`;
+  }).join('');
+}
+
+function typeMessage(element, html, callback) {
+  element.innerHTML = '';
+  const temp = document.createElement('div');
+  temp.innerHTML = html;
+  const full = temp.innerHTML;
+  let i = 0;
+  const interval = setInterval(() => {
+    i += 4;
+    element.innerHTML = full.substring(0, i);
+    if (i >= full.length) { element.innerHTML = full; clearInterval(interval); if (callback) callback(); }
+  }, 8);
+}
+
+function addUserMessage(text) {
+  const chatBox = document.getElementById('chatBox');
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.innerHTML = `<div class="avatar user">You</div><div class="bubble">${text.replace(/</g,'&lt;')}</div>`;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function addBotMessage(lines, followups) {
+  const chatBox = document.getElementById('chatBox');
+
+  // Typing indicator
+  const typing = document.createElement('div');
+  typing.className = 'msg bot'; typing.id = 'typing';
+  typing.innerHTML = `<div class="avatar bot">AI</div><div class="bubble"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+  chatBox.appendChild(typing);
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  setTimeout(() => {
+    typing.remove();
+    const div = document.createElement('div');
+    div.className = 'msg bot';
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    div.appendChild(document.createElement('div')).className = 'avatar bot';
+    div.querySelector('.avatar').textContent = 'AI';
+    div.appendChild(bubble);
+
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(div);
+    chatBox.appendChild(wrapper);
+
+    const html = formatAnswer(lines);
+    bubble.innerHTML = html;
+
+    if (followups && followups.length) {
+      const sugDiv = document.createElement('div');
+      sugDiv.className = 'suggested';
+      followups.forEach(f => {
+        const btn = document.createElement('button');
+        btn.className = 'sug-btn';
+        btn.textContent = f;
+        btn.onclick = () => sendMsg(f);
+        sugDiv.appendChild(btn);
+      });
+      wrapper.appendChild(sugDiv);
+    }
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }, 700 + Math.random() * 400);
+}
+
+function sendMsg(overrideText) {
+  const input = document.getElementById('userInput');
+  const text = overrideText || input.value.trim();
+  if (!text) return;
+  input.value = '';
+  addUserMessage(text);
+  const response = getResponse(text);
+  addBotMessage(response.answer, response.followups);
+}
+
+function askTopic(key) {
+  const topicQuestions = {
+    permits: 'How do I get a building permit in Ontario?',
+    materials: 'What are current material costs I should know about?',
+    timelines: 'How do I create a realistic project timeline?',
+    subcontractors: 'How do I find and manage reliable subcontractors?',
+    codes: 'What are the key Ontario Building Code requirements?',
+    safety: 'What are the most important safety requirements on a job site?'
+  };
+  sendMsg(topicQuestions[key]);
+}
+</script>
+</body>
+</html>
