@@ -1,25 +1,46 @@
 # ContractorAI – On-Site Q&A Assistant
 
-An AI-powered chatbot that answers real questions for contractors and tradespeople — permits, materials, timelines, building codes, and safety compliance. Built in one day as a demonstration of applied AI for non-developer users.
+An AI-powered chatbot built for contractors and tradespeople — answers real on-site questions about permits, materials, timelines, building codes, subcontractor management, and job site safety. No login, no API key, no installation needed.
 
-## Problem it solves
-Contractors waste hours Googling permits, material costs, and building codes. ContractorAI gives them instant, practical answers in plain language — no technical knowledge needed.
+🔗 **Live Demo:** https://dhruvilad34.github.io/contractor-ai-chatbot/
+
+## The Problem It Solves
+
+Contractors waste hours every day Googling permit requirements, material costs, and building code rules. ContractorAI gives them instant, practical answers in plain language — built specifically for non-developers working on the job site.
 
 ## Features
-- AI answers powered by Claude (Anthropic)
-- Topic shortcuts: Permits, Materials, Timelines, Subcontractors, Building Codes, Safety
-- Remembers conversation context across multiple questions
-- No installation required — runs directly in the browser
 
-## How to run
-1. Clone or download this repo
-2. Open `contractor-qa-chatbot.html` in your browser
-3. Add your Anthropic API key in the fetch headers:
-```js
-   'x-api-key': 'YOUR_ANTHROPIC_API_KEY_HERE'
+- **6 topic shortcuts** — Permits & Approvals, Materials & Costs, Project Timelines, Subcontractors, Building Codes, Safety & Compliance
+- **Smart keyword matching** — understands natural questions, not just exact phrases
+- **Expert knowledge base** — covers Ontario building codes (OBC), permit timelines, material costs, OHSA safety rules, subcontractor management, change orders, and billing
+- **Follow-up suggestions** — guides users to the next relevant question after every answer
+- **Typing animation** — feels like a real AI conversation
+- **Works offline** — no internet or API key required after loading
+- **No installation** — just open in any browser
+
+## Topics Covered
+
+| Topic | What it answers |
+|---|---|
+| Permits & Approvals | Timelines, fees, what triggers a permit, how to speed up approval |
+| Materials & Costs | Ontario pricing for lumber, concrete, drywall, roofing, insulation |
+| Project Timelines | Realistic durations for kitchens, basements, decks, additions |
+| Subcontractors | Finding, hiring, contracts, WSIB, holdback rules |
+| Building Codes | OBC requirements — egress, insulation R-values, stair specs, setbacks |
+| Safety & Compliance | OHSA rules, fall protection, PPE, toolbox talks, WSIB obligations |
+
+## How to Run
+
+1. Visit the live link: https://dhruvilad34.github.io/contractor-ai-chatbot/
+2. Or clone the repo and open `index.html` in any browser
+3. No API key or setup needed — works immediately
+```bash
+git clone https://github.com/dhruvilad34/contractor-ai-chatbot.git
+cd contractor-ai-chatbot
+open index.html
 ```
-4. Get a free API key at https://console.anthropic.com
+## Tech Used
 
-## Tech used
-- HTML / CSS / JavaScript (vanilla, no frameworks)
-- Anthropic Claude API (claude-sonnet)
+- HTML / CSS / JavaScript (vanilla — no frameworks, no dependencies)
+- Custom keyword-matching knowledge base engine
+- Zero external APIs — fully self-contained
